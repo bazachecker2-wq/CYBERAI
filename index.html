@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>
+      // Aggressive mitigation for browser extension injection conflicts (MetaMask, Zerion, TronLink, Atomic, etc.)
+      (function() {
+        const suppressPatterns = [
+          'isZerion',
+          'ethereum',
+          'tronlinkParams',
+          'ATOMIC-INPAGE',
+          'provider initialization'
+        ];
+
+        const suppressErrorMessages = [
+          'Cannot redefine property',
+          'only a getter',
+          'trap returned falsish',
+          't is not a function',
+          'r is not a function',
+          'e is not a function',
+          'n is not a function',
+          'i is not a function'
+        ];
+
+        // 1. Wrap Object.defineProperty to prevent "Cannot redefine property" errors
+        const originalDefineProperty = Object.defineProperty;
+        Object.defineProperty = function(obj, prop, descriptor) {
+          if (obj === window && suppressPatterns.some(p => prop.toString().includes(p))) {
+            try {
+              return originalDefineProperty.apply(this, arguments);
+            } catch (e) {
+              // Silently fail for extension-related properties
+              return obj;
+            }
+          }
+          return originalDefineProperty.apply(this, arguments);
+        };
+
+        // 2. Suppress console.error and console.warn
+        const oldConsoleError = console.error;
+        console.error = function(...args) {
+          const message = args.map(a => {
+            if (a instanceof Error) return a.message + ' ' + (a.stack || '');
+            try {
+              return typeof a === 'object' ? JSON.stringify(a) : String(a);
+            } catch (e) {
+              return String(a);
+            }
+          }).join(' ');
+          if (suppressPatterns.some(p => message.includes(p)) || suppressErrorMessages.some(m => message.includes(m))) {
+            return;
+          }
+          oldConsoleError.apply(console, args);
+        };
+
+        const oldConsoleWarn = console.warn;
+        console.warn = function(...args) {
+          const message = args.map(a => {
+            if (a instanceof Error) return a.message + ' ' + (a.stack || '');
+            try {
+              return typeof a === 'object' ? JSON.stringify(a) : String(a);
+            } catch (e) {
+              return String(a);
+            }
+          }).join(' ');
+          if (suppressPatterns.some(p => message.includes(p)) || suppressErrorMessages.some(m => message.includes(m))) {
+            return;
+          }
+          oldConsoleWarn.apply(console, args);
+        };
+
+        // 3. Global error handler
+        window.addEventListener('error', function(event) {
+          const message = event.message || '';
+          const filename = event.filename || '';
+          
+          if (filename.includes('extension://') || 
+              suppressPatterns.some(p => message.includes(p)) || 
+              suppressErrorMessages.some(m => message.includes(m))) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+
+        // 4. Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+          const reason = event.reason ? event.reason.toString() : '';
+          if (suppressPatterns.some(p => reason.includes(p)) || suppressErrorMessages.some(m => reason.includes(m))) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

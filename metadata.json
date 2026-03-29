@@ -1,0 +1,8 @@
+{
+  "name": "Cyber-Organism HUD",
+  "description": "A real-time cybernetic interface with visual scanning, neural audio processing, and multimodal intelligence powered by Gemini Live.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

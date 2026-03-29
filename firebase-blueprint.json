@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and recognition data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Recognized name" },
+        "lastSeen": { "type": "string", "format": "date-time", "description": "Last time seen" }
+      },
+      "required": ["uid", "name"]
+    },
+    "Fact": {
+      "title": "Fact",
+      "description": "Fact stored about a user or entity",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner user ID" },
+        "fact": { "type": "string", "description": "The fact content" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation time" }
+      },
+      "required": ["userId", "fact", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "User" },
+      "description": "User profiles"
+    },
+    "/users/{uid}/facts/{factId}": {
+      "schema": { "$ref": "Fact" },
+      "description": "Facts about users"
+    }
+  }
+}

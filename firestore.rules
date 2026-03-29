@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper Functions
+    function isAuthenticated() {
+       return request.auth != null;
+    }
+    function isOwner(userId) {
+       return isAuthenticated() && request.auth.uid == userId;
+    }
+    function hasRequiredFields(fields) {
+       return request.resource.data.keys().hasAll(fields);
+    }
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && hasRequiredFields(['uid', 'name']) && hasOnlyAllowedFields(['uid', 'name', 'lastSeen']);
+      allow update: if isOwner(uid) && hasOnlyAllowedFields(['uid', 'name', 'lastSeen']);
+    }
+    
+    match /users/{uid}/facts/{factId} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && hasRequiredFields(['userId', 'fact', 'createdAt']) && hasOnlyAllowedFields(['userId', 'fact', 'createdAt']);
+      allow update: if isOwner(uid) && hasOnlyAllowedFields(['userId', 'fact', 'createdAt']);
+      allow delete: if isOwner(uid);
+    }
+  }
+}
